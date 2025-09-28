@@ -23,7 +23,7 @@ settings = {
     difficulty = 1,
     BeansCount = 5,
     initialAmmo = 10,
-       wallBounceEnabled = true,
+    wallBounceEnabled = true,
     bounceDamping = 0.8 
 }
 
@@ -33,12 +33,14 @@ settingsUI = {
     inputText = "",
 }
 
-
 -- Game objects
 Beanss = {}
 bullets = {}
 fallingAmmo = {}
 bloodSplatters = {}
+
+-- Cached image dimensions
+bulletWidth, bulletHeight = 0, 0
 
 -- Game assets
 playerImage = nil
@@ -47,16 +49,28 @@ bulletImage = nil
 -- Audio
 gunSound = nil
 gunSoundTimer = 0
-levelCompletionSound = love.audio.newSource("yay.mp3", "static")
+levelCompletionSound = nil
+introSceneTypewrite = nil
+
+-- Fonts (preload)
+fonts = {}
+
+-- Colors (preload)
+colors = {
+    highlight = {0.7,0.7,1},
+    white = {1,1,1},
+    red = {1,0,0},
+    green = {0,1,0},
+    blue = {0.3,0.7,1},
+    grayDark = {0.3,0.3,0.3},
+    gray = {0.12,0.12,0.12},
+}
 
 -- Intro system
 introScenes = {
     "welcome....\nBehind every success lies a story of sacrifice..",
     "Sacrifice your bullets to earn more."
 }
-
-introSceneTypewrite = love.audio.newSource("typewriter.wav", "static")
-
 introSceneIndex = 1
 introTextProgress = 0
 introTimer = 0
@@ -69,9 +83,9 @@ RECOIL_FORCE = -400
 GRAVITY = 950
 AMMO_DROP_INTERVAL = 10
 
+-- Initialization
     love.window.setTitle("The Last Bullet")
     love.window.setMode(800, 600, {resizable=true})
-
     screenWidth, screenHeight = love.graphics.getDimensions()
 
     -- Load assets
@@ -83,9 +97,26 @@ AMMO_DROP_INTERVAL = 10
     playerImage:setFilter("nearest", "nearest")
     bulletImage:setFilter("nearest", "nearest")
 
+    -- Cache bullet dimensions
+    bulletWidth = bulletImage:getWidth() * BULLET_SCALE
+    bulletHeight = bulletImage:getHeight() * BULLET_SCALE
+
+    -- Preload fonts
+    fonts.introLarge = love.graphics.newFont(math.floor(screenHeight * 0.045))
+    fonts.introSmall = love.graphics.newFont(math.floor(screenHeight * 0.025))
+    fonts.uiLarge = love.graphics.newFont(math.floor(screenHeight * 0.035))
+    fonts.uiMedium = love.graphics.newFont(math.floor(screenHeight * 0.03))
+    fonts.uiSmall = love.graphics.newFont(math.floor(screenHeight * 0.022))
+
+    -- Load audio once
+    gunSound = love.audio.newSource("gun.mp3", "static")
+    gunSound:setLooping(false)
+    levelCompletionSound = love.audio.newSource("yay.mp3", "static")
+    introSceneTypewrite = love.audio.newSource("typewriter.wav", "static")
+
+
+
 function gameInit()
-
-
     -- Reset level state
     levelCompleted = false
     levelCompleteTimer = 0
@@ -114,18 +145,20 @@ function gameInit()
         originX = playerImage:getWidth() / 4,
         originY = playerImage:getHeight() / 2,
         scale = 4,
+        width = playerImage:getWidth() * 4,
+        height = playerImage:getHeight() * 4,
         score = 1,
         isAffectedByGravity = false,
         ammo = settings.initialAmmo
     }
 
-    -- Initialize game object arrays
-    bloodSplatters = {}
-    Beanss = {}
-    bullets = {}
-    fallingAmmo = {}
+    -- Clear existing objects (reuse tables)
+    for i=#bullets,1,-1 do bullets[i]=nil end
+    for i=#fallingAmmo,1,-1 do fallingAmmo[i]=nil end
+    for i=#Beanss,1,-1 do Beanss[i]=nil end
+    for i=#bloodSplatters,1,-1 do bloodSplatters[i]=nil end
 
-    -- Create Beanss with collected counter
+    -- Create Beanss
     for i = 1, adjustedBeansCount do
         table.insert(Beanss, {
             x = math.random(50, screenWidth - 50),
@@ -136,16 +169,13 @@ function gameInit()
     end
 
     fallingAmmoTimer = 0
-
-    -- Initialize audio
-    gunSound = love.audio.newSource("gun.mp3", "static")
-    gunSound:setLooping(false)
     gunSoundTimer = 0
 end
 
 function gameLoad()
     gameInit()
 end
+
 function gameUpdate(dt)
     if showIntro then
         updateIntro(dt)
@@ -162,7 +192,6 @@ function gameUpdate(dt)
     updateAudio(dt)
     checkLevelComplete()
 
-    -- Update highscore
     if player.score > highscore then
         highscore = player.score
     end
@@ -178,11 +207,11 @@ function gameUpdate(dt)
     end
 end
 
+-- intro system
 function updateIntro(dt)
     introTimer = introTimer + dt
     local currentText = introScenes[introSceneIndex]
     
-    -- Typewriter effect
     if introTextProgress < #currentText then
         if introTimer >= introSpeed then
             introTextProgress = introTextProgress + 1
@@ -193,13 +222,13 @@ function updateIntro(dt)
     end
 end
 
+-- bullets
 function updateBullets(dt)
     for i = #bullets, 1, -1 do
         local bullet = bullets[i]
         bullet.x = bullet.x + math.cos(bullet.rotation) * BULLET_SPEED * dt
         bullet.y = bullet.y + math.sin(bullet.rotation) * BULLET_SPEED * dt
 
-        -- Remove bullets that go off screen
         if bullet.x < -50 or bullet.x > screenWidth + 50 or 
            bullet.y < -50 or bullet.y > screenHeight + 50 then
             table.remove(bullets, i)
@@ -207,8 +236,8 @@ function updateBullets(dt)
     end
 end
 
+-- Beans
 function relocateBeans(Beans)
-    -- Find a new position that's not too close to the player
     local attempts = 0
     local newX, newY
     repeat
@@ -216,7 +245,7 @@ function relocateBeans(Beans)
         newY = math.random(50, screenHeight - 50)
         local distanceToPlayer = math.sqrt((newX - player.x)^2 + (newY - player.y)^2)
         attempts = attempts + 1
-    until distanceToPlayer > 100 or attempts > 20 -- Minimum distance from player or give up after 20 attempts
+    until distanceToPlayer > 100 or attempts > 20
     
     Beans.x = newX
     Beans.y = newY
@@ -226,25 +255,19 @@ end
 function updateBeanss(dt)
     for _, Beans in ipairs(Beanss) do
         if not Beans.collected then
-            local playerWidth = playerImage:getWidth() * player.scale
-            local playerHeight = playerImage:getHeight() * player.scale
-            local BeansWidth = bulletImage:getWidth() * BULLET_SCALE
-            local BeansHeight = bulletImage:getHeight() * BULLET_SCALE
-            
-            if math.abs(player.x - Beans.x) < (playerWidth/2 + BeansWidth/2) and 
-               math.abs(player.y - Beans.y) < (playerHeight/2 + BeansHeight/2) then
+            if math.abs(player.x - Beans.x) < (player.width/2 + bulletWidth/2) and 
+               math.abs(player.y - Beans.y) < (player.height/2 + bulletHeight/2) then
                 Beans.collected = true
                 Beans.timesCollected = Beans.timesCollected + 1
                 player.score = player.score + 1
                 player.ammo = player.ammo + 2
-                
-                -- Relocate the Beans after a short delays
                 relocateBeans(Beans)
             end
         end
     end
 end
 
+-- Falling ammo
 function updateFallingAmmo(dt)
     fallingAmmoTimer = fallingAmmoTimer + dt
     if fallingAmmoTimer >= AMMO_DROP_INTERVAL then
@@ -269,6 +292,7 @@ function updateFallingAmmo(dt)
     end
 end
 
+-- Audio
 function updateAudio(dt)
     if gunSound:isPlaying() then
         gunSoundTimer = gunSoundTimer - dt
@@ -279,6 +303,7 @@ function updateAudio(dt)
     end
 end
 
+-- Level complete
 function checkLevelComplete()
     if gameState == "playing" and not levelCompleted then
         local totalCollected = 0
@@ -286,7 +311,6 @@ function checkLevelComplete()
             totalCollected = totalCollected + Beans.timesCollected
         end
         
-        -- Required collections = current level (1 for level 1, 2 for level 2, etc.)
         local requiredCollections = currentLevel
         if totalCollected >= requiredCollections then
             levelCompleted = true 
@@ -296,7 +320,7 @@ function checkLevelComplete()
             player.velocityX = 0
             player.velocityY = 0
             player.isAffectedByGravity = false
-            fallingAmmo = {} -- Clear falling ammo when level completes
+            for i=#fallingAmmo,1,-1 do fallingAmmo[i]=nil end
         end
     end
 end
@@ -304,13 +328,10 @@ end
 function dropAmmo()
     local x = math.random(50, screenWidth - 50)
     local y = -20
-    table.insert(fallingAmmo, {
-        x = x, 
-        y = y, 
-        velocityY = settings.bulletFallSpeed
-    })
+    table.insert(fallingAmmo, {x = x, y = y, velocityY = settings.bulletFallSpeed})
 end
 
+-- DRAW functions (optimized with cached fonts/colors)
 function gameDraw()
     if showIntro then
         drawIntro()
@@ -332,19 +353,22 @@ end
 
 function drawIntro()
     love.graphics.clear(settings.backgroundColor)
-    love.graphics.setColor(1,1,1)
-    love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.045)))
+    love.graphics.setColor(colors.white)
+    love.graphics.setFont(fonts.introLarge)
     
     local currentText = introScenes[introSceneIndex]
     local displayText = currentText:sub(1, introTextProgress)
     love.graphics.printf(displayText, screenWidth*0.1, screenHeight*0.35, screenWidth*0.8, "center")
     
-    love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.025)))
+    love.graphics.setFont(fonts.introSmall)
     if introTextProgress >= #currentText then
-        love.graphics.setColor(0.7,0.7,1)
+        love.graphics.setColor(colors.highlight)
         love.graphics.printf("Press SPACE to continue...", 0, screenHeight*0.8, screenWidth, "center")
     end
 end
+
+-- The rest of the draw and input functions can be rewritten similarly using preloaded fonts/colors and clearing tables instead of creating them.
+
 
 function drawHomeScreen()
     love.graphics.clear(settings.backgroundColor)
