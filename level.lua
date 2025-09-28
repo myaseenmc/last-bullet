@@ -2,7 +2,6 @@ function startLevel(level)
     local BeansCount = math.max(6, 2 + (level - 1) * 2)
     settings.BeansCount = BeansCount
     
-    -- Apply difficulty modifiers
     if settings.difficulty == 2 then 
         BeansCount = math.max(3, math.floor(settings.BeansCount * 0.6)) 
     elseif settings.difficulty == 3 then 

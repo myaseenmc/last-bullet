@@ -1,9 +1,8 @@
--- requiring stuff 
+
 require "level"
 require "utils"
 require "player"
 
--- Game state management
 gameState = "home"
 showIntro = true
 gameOver = false
@@ -12,10 +11,8 @@ levelCompleteTimer = 0
 currentLevel = 1
 highscore = 0
 
--- Screen dimensions
 screenWidth, screenHeight = 0, 0
 
--- Game settings
 settings = {
     backgroundColor = {0.12, 0.12, 0.12},
     backgroundColorName = "Gray",
@@ -27,35 +24,28 @@ settings = {
     bounceDamping = 0.8 
 }
 
--- Settings UI state
 settingsUI = {
     selectedInput = nil,
     inputText = "",
 }
 
--- Game objects
 Beanss = {}
 bullets = {}
 fallingAmmo = {}
 bloodSplatters = {}
 
--- Cached image dimensions
 bulletWidth, bulletHeight = 0, 0
 
--- Game assets
 playerImage = nil
 bulletImage = nil
 
--- Audio
 gunSound = nil
 gunSoundTimer = 0
 levelCompletionSound = nil
 introSceneTypewrite = nil
 
--- Fonts (preload)
 fonts = {}
 
--- Colors (preload)
 colors = {
     highlight = {0.7,0.7,1},
     white = {1,1,1},
@@ -66,7 +56,6 @@ colors = {
     gray = {0.12,0.12,0.12},
 }
 
--- Intro system
 introScenes = {
     "welcome....\nBehind every success lies a story of sacrifice..",
     "Sacrifice your bullets to earn more."
@@ -76,39 +65,34 @@ introTextProgress = 0
 introTimer = 0
 introSpeed = 0.04
 
--- Game constants
 BULLET_SPEED = 600
 BULLET_SCALE = 4
 RECOIL_FORCE = -400
 GRAVITY = 950
 AMMO_DROP_INTERVAL = 10
 
--- Initialization
     love.window.setTitle("The Last Bullet")
     love.window.setMode(800, 600, {resizable=true})
     screenWidth, screenHeight = love.graphics.getDimensions()
 
-    -- Load assets
     playerImage = love.graphics.newImage("guns/husher.png")
     bulletImage = love.graphics.newImage("bullet.png")
 
-    -- Set pixel art filtering
     love.graphics.setDefaultFilter("nearest", "nearest")
     playerImage:setFilter("nearest", "nearest")
     bulletImage:setFilter("nearest", "nearest")
 
-    -- Cache bullet dimensions
     bulletWidth = bulletImage:getWidth() * BULLET_SCALE
     bulletHeight = bulletImage:getHeight() * BULLET_SCALE
 
-    -- Preload fonts
+  
     fonts.introLarge = love.graphics.newFont(math.floor(screenHeight * 0.045))
     fonts.introSmall = love.graphics.newFont(math.floor(screenHeight * 0.025))
     fonts.uiLarge = love.graphics.newFont(math.floor(screenHeight * 0.035))
     fonts.uiMedium = love.graphics.newFont(math.floor(screenHeight * 0.03))
     fonts.uiSmall = love.graphics.newFont(math.floor(screenHeight * 0.022))
 
-    -- Load audio once
+   
     gunSound = love.audio.newSource("gun.mp3", "static")
     gunSound:setLooping(false)
     levelCompletionSound = love.audio.newSource("yay.mp3", "static")
@@ -117,16 +101,13 @@ AMMO_DROP_INTERVAL = 10
 
 
 function gameInit()
-    -- Reset level state
     levelCompleted = false
     levelCompleteTimer = 0
     gameOver = false
 
-    -- Calculate Beans count based on level (base count + level)
     local baseBeansCount = settings.BeansCount
     local actualBeansCount = baseBeansCount + currentLevel
-    
-    -- Adjust Beans count based on difficulty
+
     local adjustedBeansCount = actualBeansCount
     if settings.difficulty == 2 then 
         adjustedBeansCount = math.max(3, math.floor(actualBeansCount * 0.6)) 
@@ -134,7 +115,6 @@ function gameInit()
         adjustedBeansCount = math.max(1, math.floor(actualBeansCount * 0.25)) 
     end
 
-    -- Initialize player
     player = {
         x = screenWidth / 2,
         y = screenHeight / 2,
@@ -152,13 +132,12 @@ function gameInit()
         ammo = settings.initialAmmo
     }
 
-    -- Clear existing objects (reuse tables)
+
     for i=#bullets,1,-1 do bullets[i]=nil end
     for i=#fallingAmmo,1,-1 do fallingAmmo[i]=nil end
     for i=#Beanss,1,-1 do Beanss[i]=nil end
     for i=#bloodSplatters,1,-1 do bloodSplatters[i]=nil end
 
-    -- Create Beanss
     for i = 1, adjustedBeansCount do
         table.insert(Beanss, {
             x = math.random(50, screenWidth - 50),
@@ -207,7 +186,7 @@ function gameUpdate(dt)
     end
 end
 
--- intro system
+
 function updateIntro(dt)
     introTimer = introTimer + dt
     local currentText = introScenes[introSceneIndex]
@@ -222,7 +201,6 @@ function updateIntro(dt)
     end
 end
 
--- bullets
 function updateBullets(dt)
     for i = #bullets, 1, -1 do
         local bullet = bullets[i]
@@ -236,7 +214,7 @@ function updateBullets(dt)
     end
 end
 
--- Beans
+
 function relocateBeans(Beans)
     local attempts = 0
     local newX, newY
@@ -267,7 +245,7 @@ function updateBeanss(dt)
     end
 end
 
--- Falling ammo
+
 function updateFallingAmmo(dt)
     fallingAmmoTimer = fallingAmmoTimer + dt
     if fallingAmmoTimer >= AMMO_DROP_INTERVAL then
@@ -292,7 +270,6 @@ function updateFallingAmmo(dt)
     end
 end
 
--- Audio
 function updateAudio(dt)
     if gunSound:isPlaying() then
         gunSoundTimer = gunSoundTimer - dt
@@ -303,7 +280,6 @@ function updateAudio(dt)
     end
 end
 
--- Level complete
 function checkLevelComplete()
     if gameState == "playing" and not levelCompleted then
         local totalCollected = 0
@@ -331,7 +307,6 @@ function dropAmmo()
     table.insert(fallingAmmo, {x = x, y = y, velocityY = settings.bulletFallSpeed})
 end
 
--- DRAW functions (optimized with cached fonts/colors)
 function gameDraw()
     if showIntro then
         drawIntro()
@@ -367,8 +342,6 @@ function drawIntro()
     end
 end
 
--- The rest of the draw and input functions can be rewritten similarly using preloaded fonts/colors and clearing tables instead of creating them.
-
 
 function drawHomeScreen()
     love.graphics.clear(settings.backgroundColor)
@@ -393,7 +366,6 @@ function drawSettingsScreen()
     local buttonW = screenWidth * 0.18
     local buttonH = screenHeight * 0.06
 
-    -- Background color buttons
     local bgOptions = {
         {"Gray", {0.12,0.12,0.12}}, 
         {"Blue", {0.18,0.22,0.45}}, 
@@ -412,7 +384,6 @@ function drawSettingsScreen()
     love.graphics.setColor(1,1,1)
     love.graphics.print("BG Color: " .. settings.backgroundColorName, marginX, marginY + buttonH + screenHeight*0.01)
 
-    -- Fall speed controls
     local fsx = marginX
     local fsy = marginY + buttonH + spacingY
     local fsw = buttonH
@@ -425,7 +396,6 @@ function drawSettingsScreen()
     love.graphics.printf("+", fsx+fsw+screenWidth*0.08, fsy+fsh*0.25, fsw, "center")
     love.graphics.print("Fall Speed: " .. tostring(settings.bulletFallSpeed), fsx+fsw+screenWidth*0.15, fsy+fsh*0.25)
 
-    -- Difficulty buttons
     local difficulties = {{"Easy",1},{"Medium",2},{"Hard",3}}
     for i, diff in ipairs(difficulties) do
         local dx = marginX + (i-1)*(buttonW*0.7 + screenWidth*0.03)
@@ -442,14 +412,14 @@ function drawSettingsScreen()
     local diffName = difficulties[settings.difficulty][1]
     love.graphics.print("Difficulty: " .. diffName, marginX, fsy + fsh + spacingY + buttonH + screenHeight*0.01)
 
-    -- Input fields and other UI elements...
+    
     drawSettingsInputFields(marginX, marginY, spacingY, buttonW, buttonH, fsy, fsh)
     drawSettingsButtons(marginX, buttonW, buttonH)
     drawSettingsSummary(marginX, marginY, spacingY, buttonW, diffName)
 end
 
 function drawSettingsInputFields(marginX, marginY, spacingY, buttonW, buttonH, fsy, fsh)
-    -- Bean count input
+   
     local bx = marginX
     local by = fsy + fsh + spacingY + buttonH + spacingY
     local bw = buttonW
@@ -461,7 +431,7 @@ function drawSettingsInputFields(marginX, marginY, spacingY, buttonW, buttonH, f
     love.graphics.printf(beanText, bx, by+bh*0.25, bw, "center")
     love.graphics.print("Base Bean Count", bx+bw+screenWidth*0.03, by+bh*0.25)
 
-    -- Initial bullets input
+ 
     local ix = marginX
     local iy = by + bh + spacingY
     local iw = buttonW
@@ -475,7 +445,6 @@ function drawSettingsInputFields(marginX, marginY, spacingY, buttonW, buttonH, f
 end
 
 function drawSettingsButtons(marginX, buttonW, buttonH)
-    -- Default button
     local dx = screenWidth/2 - buttonW/2
     local dy = screenHeight - buttonH*2 - screenHeight*0.03
     local dw = buttonW
@@ -486,7 +455,6 @@ function drawSettingsButtons(marginX, buttonW, buttonH)
     love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.035)))
     love.graphics.printf("Default", dx, dy+dh*0.25, dw, "center")
 
-    -- Back button
     love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.025)))
     local backW = buttonW*0.7
     local backH = buttonH
@@ -514,7 +482,6 @@ end
 function drawGameplay()
     love.graphics.clear(settings.backgroundColor)
 
-    -- Draw crosshair
     local mouseX, mouseY = love.mouse.getPosition()
     love.graphics.setColor(0.9, 0.2, 0.2)
     love.graphics.setLineWidth(1)
@@ -522,7 +489,6 @@ function drawGameplay()
     love.graphics.line(mouseX, mouseY - 10, mouseX, mouseY + 10)
     love.graphics.circle("line", mouseX, mouseY, 12)
 
-    -- Draw Beanss
     for _, Beans in ipairs(Beanss) do
         if not Beans.collected then
             love.graphics.setColor(1, 1, 0)
@@ -536,7 +502,6 @@ function drawGameplay()
         end
     end
 
-    -- Draw player
     love.graphics.setColor(1,1,1)
     love.graphics.draw(
         playerImage,
@@ -546,7 +511,6 @@ function drawGameplay()
         player.originX, player.originY
     )
 
-    -- Draw bullets
     for _, bullet in ipairs(bullets) do
         love.graphics.draw(
             bulletImage,
@@ -557,7 +521,6 @@ function drawGameplay()
         )
     end
 
-    -- Draw falling ammo
     for _, ammo in ipairs(fallingAmmo) do
         love.graphics.setColor(0.3, 0.7, 1)
         love.graphics.draw(
@@ -569,10 +532,8 @@ function drawGameplay()
         )
     end
 
-    -- Draw UI
     drawGameUI()
     
-    -- Draw overlays
     if gameState == "gameover" or gameOver then
         drawGameOverScreen()
     end
@@ -587,7 +548,6 @@ function drawGameUI()
     love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.03)))
     love.graphics.printf("Highscore: " .. tostring(highscore), 0, 8, screenWidth, "center")
 
-    -- Calculate total collections for progress display
     local totalCollected = 0
     for _, Beans in ipairs(Beanss) do
         totalCollected = totalCollected + Beans.timesCollected
@@ -636,13 +596,11 @@ function handleLevelCompleteInput(key)
 end
 
 function handleLevelCompleteMouseInput(x, y)
-    -- Click anywhere to continue to next level
     currentLevel = currentLevel + 1
     startLevel(currentLevel)
     gameState = "playing"
 end
 
--- Input handling
 function inputKey(key)
     if showIntro then
         handleIntroInput(key)
@@ -807,7 +765,7 @@ function handleSettingsMouseInput(x, y)
     local buttonW = screenWidth * 0.18
     local buttonH = screenHeight * 0.06
 
-    -- Background color buttons
+
     local bgOptions = {{"Gray",{0.12,0.12,0.12}},{"Blue",{0.18,0.22,0.45}},{"Green",{0.1,0.25,0.1}}}
     for i, option in ipairs(bgOptions) do
         local bx = marginX + (i-1)*(buttonW + screenWidth*0.04)
@@ -818,7 +776,7 @@ function handleSettingsMouseInput(x, y)
             return
         end
     end
-    -- Fall speed buttons
+  
     local fsx = marginX
     local fsy = marginY + buttonH + spacingY
     local fsw = buttonH
@@ -831,7 +789,7 @@ function handleSettingsMouseInput(x, y)
         settings.bulletFallSpeed = math.min(settings.bulletFallSpeed + 5, 100)
         return
     end
-    -- Difficulty buttons
+
     local difficulties = {{"Easy",1},{"Medium",2},{"Hard",3}}
     for i, diff in ipairs(difficulties) do
         local dx = marginX + (i-1)*(buttonW*0.7 + screenWidth*0.03)
@@ -844,7 +802,7 @@ function handleSettingsMouseInput(x, y)
         end
     end
 
-    -- Bean count input
+
     local bx = marginX
     local by = fsy + fsh + spacingY + buttonH + spacingY
     local bw = buttonW
@@ -854,7 +812,7 @@ function handleSettingsMouseInput(x, y)
         settingsUI.inputText = ""
         return
     end
-    -- Initial bullets input
+  
     local ix = marginX
     local iy = by + bh + spacingY
     local iw = buttonW
@@ -864,7 +822,7 @@ function handleSettingsMouseInput(x, y)
         settingsUI.inputText = ""
         return
     end
-    -- Default button
+   
     local dx = screenWidth/2 - buttonW/2
     local dy = screenHeight - buttonH*2 - screenHeight*0.03
     local dw = buttonW
@@ -878,7 +836,7 @@ function handleSettingsMouseInput(x, y)
         settings.initialAmmo = 10
         return
     end
-    -- Back button
+   
     local backW = buttonW*0.7
     local backH = buttonH
     local backX = screenWidth*0.03
@@ -892,11 +850,11 @@ end
 function shootBullet()
     player.isAffectedByGravity = true
 
-    -- Apply recoil to player
+
     player.velocityX = player.velocityX + math.cos(player.rotation) * RECOIL_FORCE
     player.velocityY = player.velocityY + math.sin(player.rotation) * RECOIL_FORCE
 
-    -- Create bullet
+  
     local bulletOffset = 80
     local bulletX = player.x + math.cos(player.rotation) * bulletOffset
     local bulletY = player.y + math.sin(player.rotation) * bulletOffset
@@ -908,7 +866,7 @@ function shootBullet()
 
     player.ammo = player.ammo - 1
 
-    -- Play gun sound
+   
     love.audio.stop(gunSound)
     love.audio.play(gunSound)
     gunSoundTimer = 0.1
@@ -916,10 +874,9 @@ end
 
 
 
--- Initialize the game
+
 gameInit()
 
--- Set up Love2D callbacks
 love.update = gameUpdate
 love.draw = gameDraw
 love.keypressed = inputKey
