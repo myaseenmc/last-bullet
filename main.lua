@@ -569,7 +569,7 @@ function drawGameUI()
         totalCollected = totalCollected + Beans.timesCollected
     end
 
-    love.graphics.print("The last Bullet. Beans: " .. tostring(player.score) .. "  Ammo: " .. tostring(player.ammo), 8, 8)
+    love.graphics.print("The last Bullet | Ammo: " .. tostring(player.ammo), 8, 8)
 
     love.graphics.setFont(love.graphics.newFont(math.floor(screenHeight * 0.025)))
     love.graphics.setColor(1,1,1)
