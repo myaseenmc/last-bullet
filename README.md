@@ -5,6 +5,8 @@ A small arcade-style survival game built with **Lua** and **LÖVE2D**.
 In *The Last Bullet*, every bullet matters.  
 Shoot to move, collect bullets to survive, and sacrifice ammo to gain momentum and score.
 
+Gun's movement is driven by recoil impulses, so momentum and ammo management decide the gameplay.
+
 ---
 
 ## 🎮 Gameplay
@@ -22,20 +24,6 @@ You control a floating gun that moves through recoil force whenever you shoot.
 Your objective is simple:
 
 > Collect bullets, survive longer, and complete levels without running out of ammo or falling off the screen.
-
----
-
-## ✨ Features
-
-- Smooth recoil-based movement
-- Dynamic level progression
-- Adjustable difficulty settings
-- Falling ammo pickups
-- Multiple background themes
-- Sound effects and intro scenes
-- Mouse aiming and shooting
-- High score tracking
-- Lightweight Love2D game architecture
 
 ---
 
@@ -60,3 +48,6 @@ last-bullet/
 ├── typewriter.wav       # Intro typing sound
 │
 └── bullet.love          # Packaged game build
+
+
+
